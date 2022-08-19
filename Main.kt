@@ -7,27 +7,17 @@ class CoffeeMachine(
     private var cups: Int = 9,
     private var money: Int = 550
 ) {
-    companion object {
-        const val WATER_PER_ESPRESSO = 250
-        const val COFFEE_BEANS_PER_ESPRESSO = 16
-        const val CUPS_PER_ESPRESSO = 1
-        const val ESPRESSO_COST = 4
-
-        const val WATER_PER_LATTE = 350
-        const val MILK_PER_LATTE = 75
-        const val COFFEE_BEANS_PER_LATTE = 20
-        const val CUPS_PER_LATTE = 1
-        const val LATTE_COST = 7
-
-        const val WATER_PER_CAPPUCCINO = 200
-        const val MILK_PER_CAPPUCCINO = 100
-        const val COFFEE_BEANS_PER_CAPPUCCINO = 12
-        const val CUPS_PER_CAPPUCCINO = 1
-        const val CAPPUCCINO_COST = 6
-    }
-
-    enum class CoffeeType {
-        ESPRESSO, LATTE, CAPPUCCINO
+    enum class CoffeeType(
+        val water: Int,
+        val milk: Int,
+        val coffeeBeans: Int,
+        val cups: Int,
+        val cost: Int,
+        val choiceNumber: Int
+    ) {
+        ESPRESSO(250, 0, 16, 1, 4, 1),
+        LATTE(350, 75, 20, 1, 7, 2),
+        CAPPUCCINO(200, 100, 12, 1, 6, 3),
     }
 
     enum class Operation {
@@ -69,131 +59,65 @@ class CoffeeMachine(
     }
 
     private fun buyAction() {
+        fun printFailingCauseFor(coffeeType: CoffeeType) {
+            println(
+                when {
+                    water < coffeeType.water -> "Sorry, not enough water!"
+                    milk < coffeeType.milk -> "Sorry, not enough milk!"
+                    coffeeBeans < coffeeType.coffeeBeans -> "Sorry, not enough coffee beans!"
+                    cups < coffeeType.cups -> "Sorry, not enough disposable cups!"
+                    else -> throw Exception("unknown cause")
+                }
+            )
+        }
+
+        fun makeCoffee(coffeeType: CoffeeType) {
+            updateMaterials(
+                coffeeType.water,
+                coffeeType.milk,
+                coffeeType.coffeeBeans,
+                coffeeType.cups,
+                coffeeType.cost,
+                Operation.BUY
+            )
+        }
+
+        fun areResourcesEnoughFor(coffeeType: CoffeeType): Boolean =
+            water >= coffeeType.water && milk >= coffeeType.milk && coffeeBeans >= coffeeType.coffeeBeans && cups >= coffeeType.cups
+
+        fun findCoffeeByChoiceNumber(choiceNumber: String): CoffeeType =
+            CoffeeType.values().first { it.choiceNumber == choiceNumber.toInt() }
+
+        fun isValidChoice(choice: String): Boolean = choice.first() in '1'..'3' || choice == "back"
+
         fun printBuyMenu() {
             print("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu: ")
         }
 
-        fun isValidChoice(choice: String): Boolean = choice.first() in '1'..'3' || choice == "back"
+        fun readBuyMenuChoice(): String = try {
+            printBuyMenu()
+            val coffeeChoice = readln().trim()
+            if (!isValidChoice(coffeeChoice)) throw Exception("coffee choice not valid")
+            coffeeChoice
+        } catch (e: Exception) {
+            println("Please enter a valid choice")
+            readBuyMenuChoice()
+        }
 
-        fun readBuyMenuChoice(): String =
-            try {
-                printBuyMenu()
-                val coffeeChoice = readln().trim()
-                if (!isValidChoice(coffeeChoice)) throw Exception("coffee choice not valid")
-                coffeeChoice
-            } catch (e: Exception) {
-                println("Please enter a valid choice")
-                readBuyMenuChoice()
-            }
-
-        when (readBuyMenuChoice()) {
-            "1" -> if (areResourcesEnoughFor(CoffeeType.ESPRESSO)) {
-                println("I have enough resources, making you a coffee!")
-                makeCoffee(CoffeeType.ESPRESSO)
-            } else printFailingCauseFor(
-                CoffeeType.ESPRESSO
-            )
-            "2" -> if (areResourcesEnoughFor(CoffeeType.LATTE)) {
-                println("I have enough resources, making you a coffee!")
-                makeCoffee(CoffeeType.LATTE)
-            } else printFailingCauseFor(
-                CoffeeType.LATTE
-            )
-            "3" -> if (areResourcesEnoughFor(CoffeeType.CAPPUCCINO)) {
-                println("I have enough resources, making you a coffee!")
-                makeCoffee(CoffeeType.CAPPUCCINO)
-            } else printFailingCauseFor(
-                CoffeeType.CAPPUCCINO
-            )
+        when (val choice = readBuyMenuChoice()) {
             "back" -> return
-        }
-    }
-
-    private fun areResourcesEnoughFor(coffeeType: CoffeeType): Boolean {
-        val espressoConditions =
-            water >= WATER_PER_ESPRESSO && coffeeBeans >= COFFEE_BEANS_PER_ESPRESSO && cups >= CUPS_PER_ESPRESSO
-        val latteConditions =
-            water >= WATER_PER_LATTE && milk >= MILK_PER_LATTE && coffeeBeans >= COFFEE_BEANS_PER_LATTE && cups >= CUPS_PER_LATTE
-        val cappuccinoConditions =
-            water >= WATER_PER_CAPPUCCINO && milk >= MILK_PER_CAPPUCCINO && coffeeBeans >= COFFEE_BEANS_PER_CAPPUCCINO && cups >= CUPS_PER_CAPPUCCINO
-
-        return when (coffeeType) {
-            CoffeeType.ESPRESSO -> espressoConditions
-            CoffeeType.LATTE -> latteConditions
-            CoffeeType.CAPPUCCINO -> cappuccinoConditions
-        }
-    }
-
-    private fun printFailingCauseFor(coffeeType: CoffeeType) {
-        when (coffeeType) {
-            CoffeeType.ESPRESSO -> {
-                when {
-                    water < WATER_PER_ESPRESSO -> println("Sorry, not enough water!")
-                    coffeeBeans < COFFEE_BEANS_PER_ESPRESSO -> println("Sorry, not enough coffee beans!")
-                    cups < CUPS_PER_ESPRESSO -> println("Sorry, not enough disposable cups!")
-                }
-            }
-            CoffeeType.LATTE -> {
-                when {
-                    water < WATER_PER_LATTE -> println("Sorry, not enough water!")
-                    milk < MILK_PER_LATTE -> println("Sorry, not enough milk!")
-                    coffeeBeans < COFFEE_BEANS_PER_LATTE -> println("Sorry, not enough coffee beans!")
-                    cups < CUPS_PER_LATTE -> println("Sorry, not enough disposable cups!")
-                }
-            }
-            CoffeeType.CAPPUCCINO -> {
-                when {
-                    water < WATER_PER_CAPPUCCINO -> println("Sorry, not enough water!")
-                    milk < MILK_PER_CAPPUCCINO -> println("Sorry, not enough milk!")
-                    coffeeBeans < COFFEE_BEANS_PER_CAPPUCCINO -> println("Sorry, not enough coffee beans!")
-                    cups < CUPS_PER_CAPPUCCINO -> println("Sorry, not enough disposable cups!")
-                }
-            }
-        }
-    }
-
-    private fun makeCoffee(coffeeType: CoffeeType) {
-        when (coffeeType) {
-            CoffeeType.ESPRESSO -> {
-                updateMaterials(
-                    WATER_PER_ESPRESSO,
-                    0,
-                    COFFEE_BEANS_PER_ESPRESSO,
-                    CUPS_PER_ESPRESSO,
-                    ESPRESSO_COST,
-                    Operation.BUY
-                )
-            }
-            CoffeeType.LATTE -> {
-                updateMaterials(
-                    WATER_PER_LATTE,
-                    MILK_PER_LATTE,
-                    COFFEE_BEANS_PER_LATTE,
-                    CUPS_PER_LATTE,
-                    LATTE_COST,
-                    Operation.BUY
-                )
-            }
-            CoffeeType.CAPPUCCINO -> {
-                updateMaterials(
-                    WATER_PER_CAPPUCCINO,
-                    MILK_PER_CAPPUCCINO,
-                    COFFEE_BEANS_PER_CAPPUCCINO,
-                    CUPS_PER_CAPPUCCINO,
-                    CAPPUCCINO_COST,
-                    Operation.BUY
-                )
+            else -> {
+                val coffeeType = findCoffeeByChoiceNumber(choice)
+                if (areResourcesEnoughFor(coffeeType)) {
+                    println("I have enough resources, making you a coffee!")
+                    makeCoffee(coffeeType)
+                } else printFailingCauseFor(coffeeType)
             }
         }
     }
 
     private fun updateMaterials(
-        water: Int = 0,
-        milk: Int = 0,
-        coffeeBeans: Int = 0,
-        cups: Int = 0,
-        money: Int = 0,
-        operation: Operation
+        water: Int = 0, milk: Int = 0, coffeeBeans: Int = 0, cups: Int = 0, money: Int = 0, operation: Operation
     ) {
         when (operation) {
             Operation.BUY -> {
@@ -221,28 +145,27 @@ class CoffeeMachine(
         fun isValidCoffeeBeansQuantity(coffeeBeansQuantity: Int): Boolean = coffeeBeansQuantity >= 0
         fun isValidCupsQuantity(cupsQuantity: Int): Boolean = cupsQuantity >= 0
 
-        fun readFillMenuChoice(): List<Int> =
-            try {
-                print("Write how many ml of water do you want to add: ")
-                val refilledWater = readln().toInt()
-                if (!isValidWaterQuantity(refilledWater)) throw Exception("refilled water choice not valid")
-                print("Write how many ml of milk do you want to add: ")
-                val refilledMilk = readln().toInt()
-                if (!isValidMilkQuantity(refilledMilk)) throw Exception("refilled milk choice not valid")
-                print("Write how many grams of coffee beans do you want to add: ")
-                val refilledCoffeeBeans = readln().toInt()
-                if (!isValidCoffeeBeansQuantity(refilledCoffeeBeans)) throw Exception("refilled coffee beans choice not valid")
-                print("Write how many disposable cups of coffee do you want to add: ")
-                val refilledCups = readln().toInt()
-                if (!isValidCupsQuantity(refilledCups)) throw Exception("refilled cups choice not valid")
-                listOf(refilledWater, refilledMilk, refilledCoffeeBeans, refilledCups)
-            } catch (e: NumberFormatException) {
-                println("Please insert a valid number")
-                readFillMenuChoice()
-            } catch (e: Exception) {
-                println("Please enter a non-negative quantity")
-                readFillMenuChoice()
-            }
+        fun readFillMenuChoice(): List<Int> = try {
+            print("Write how many ml of water do you want to add: ")
+            val refilledWater = readln().toInt()
+            if (!isValidWaterQuantity(refilledWater)) throw Exception("refilled water choice not valid")
+            print("Write how many ml of milk do you want to add: ")
+            val refilledMilk = readln().toInt()
+            if (!isValidMilkQuantity(refilledMilk)) throw Exception("refilled milk choice not valid")
+            print("Write how many grams of coffee beans do you want to add: ")
+            val refilledCoffeeBeans = readln().toInt()
+            if (!isValidCoffeeBeansQuantity(refilledCoffeeBeans)) throw Exception("refilled coffee beans choice not valid")
+            print("Write how many disposable cups of coffee do you want to add: ")
+            val refilledCups = readln().toInt()
+            if (!isValidCupsQuantity(refilledCups)) throw Exception("refilled cups choice not valid")
+            listOf(refilledWater, refilledMilk, refilledCoffeeBeans, refilledCups)
+        } catch (e: NumberFormatException) {
+            println("Please insert a valid number")
+            readFillMenuChoice()
+        } catch (e: Exception) {
+            println("Please enter a non-negative quantity")
+            readFillMenuChoice()
+        }
 
         val (refilledWater, refilledMilk, refilledCoffeeBeans, refilledCups) = readFillMenuChoice()
         updateMaterials(refilledWater, refilledMilk, refilledCoffeeBeans, refilledCups, operation = Operation.FILL)
