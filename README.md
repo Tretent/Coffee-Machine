@@ -1,2 +1,2 @@
 # Coffee-Machine
-Kotlin Basics Coffee Machine project
+JetBrains Academy Kotlin Basics Coffee Machine project
